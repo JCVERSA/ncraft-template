@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --yellow: #FFE600;
+    --pink: #FF4D8D;
+    --cyan: #00F0FF;
+    --purple: #8B5CF6;
+    --violet: #581C87;
+    --neon-green: #22C55E;
+    --gameboy-bg: #8BAC0F;
+    --gameboy-dark: #0F380F;
+    --crt-scanline: rgba(18, 16, 16, 0.4);
+  }
+
+  body {
+    background-color: #0b0717;
+    background-image: 
+      radial-gradient(#FFE600 1.2px, transparent 1.2px), 
+      radial-gradient(#FF4D8D 1.2px, #0c0818 1.2px);
+    background-size: 32px 32px;
+    background-position: 0 0, 16px 16px;
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Neo-Brutalist Hard Shadows */
+.brutal-shadow {
+  box-shadow: 6px 6px 0px #000000;
+}
+.brutal-shadow-sm {
+  box-shadow: 3px 3px 0px #000000;
+}
+.brutal-shadow-lg {
+  box-shadow: 10px 10px 0px #000000;
+}
+.brutal-shadow-pink {
+  box-shadow: 6px 6px 0px #FF4D8D;
+}
+.brutal-shadow-yellow {
+  box-shadow: 6px 6px 0px #FFE600;
+}
+.brutal-shadow-cyan {
+  box-shadow: 6px 6px 0px #00F0FF;
+}
+
+.brutal-press {
+  transition: all 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+.brutal-press:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px #000000;
+}
+.brutal-press:active {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 2px 0px #000000;
+}
+
+/* Marquee ticker */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee 18s linear infinite;
+}
+
+/* CRT Arcade Screen Effect */
+.crt-screen {
+  position: relative;
+  background-color: #0a1f0d;
+  color: #39ff14;
+  text-shadow: 0 0 6px rgba(57, 255, 20, 0.75);
+}
+.crt-screen::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
+  background-size: 100% 4px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* 3D Cartridge Bevel Effect */
+.cartridge-grooves {
+  background: repeating-linear-gradient(
+    90deg,
+    #1e1b2e,
+    #1e1b2e 8px,
+    #0f0d18 8px,
+    #0f0d18 16px
+  );
+}
+
+/* Font helpers */
+.font-pixel {
+  font-family: 'Press Start 2P', monospace;
+}
+.font-archivo {
+  font-family: 'Archivo Black', sans-serif;
+}
+.font-chakra {
+  font-family: 'Chakra Petch', sans-serif;
+}
+.font-mono-code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Pulse sticker */
+@keyframes stickerWiggle {
+  0%, 100% { transform: rotate(-3deg) scale(1); }
+  50% { transform: rotate(-1deg) scale(1.04); }
+}
+.sticker-wiggle {
+  animation: stickerWiggle 3s ease-in-out infinite;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: #FFE600;
+  border: 1px solid #000;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FF4D8D;
+}

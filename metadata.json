@@ -1,0 +1,6 @@
+{
+  "name": "Nebula Arcade - 16-Bit BDS Cartridge Engine",
+  "description": "Retro-arcade neo-brutalist control console for Minecraft Bedrock Dedicated Server (BDS) runtime with real-time logs, cartridge slot, and tactile controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
