@@ -206,3 +206,217 @@ export function playTerminalKey() {
   osc.start(now);
   osc.stop(now + 0.02);
 }
+
+/** Heavy mechanical latch click when cartridge is inserted into slot */
+export function playCartridgeSnapSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  // Deep transient thud
+  const osc1 = ctx.createOscillator();
+  const gain1 = ctx.createGain();
+  osc1.type = 'triangle';
+  osc1.frequency.setValueAtTime(160, now);
+  osc1.frequency.exponentialRampToValueAtTime(45, now + 0.09);
+  gain1.gain.setValueAtTime(0.28, now);
+  gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+  osc1.connect(gain1);
+  gain1.connect(ctx.destination);
+  osc1.start(now);
+  osc1.stop(now + 0.09);
+
+  // Sharp metallic snap
+  const osc2 = ctx.createOscillator();
+  const gain2 = ctx.createGain();
+  osc2.type = 'square';
+  osc2.frequency.setValueAtTime(950, now + 0.02);
+  osc2.frequency.exponentialRampToValueAtTime(180, now + 0.07);
+  gain2.gain.setValueAtTime(0.18, now + 0.02);
+  gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.07);
+  osc2.connect(gain2);
+  gain2.connect(ctx.destination);
+  osc2.start(now + 0.02);
+  osc2.stop(now + 0.07);
+}
+
+/** Authentic Minecraft Wooden Button Click */
+export function playMinecraftClick() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(1100, now);
+  osc.frequency.exponentialRampToValueAtTime(320, now + 0.045);
+
+  gain.gain.setValueAtTime(0.22, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.045);
+}
+
+/** Authentic Minecraft Stone Button / Pressure Plate Clink */
+export function playMinecraftStoneClick() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(420, now);
+  osc.frequency.exponentialRampToValueAtTime(180, now + 0.06);
+
+  gain.gain.setValueAtTime(0.16, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.06);
+}
+
+/** Authentic Minecraft Experience (XP) Orb Pick-up Sound */
+export function playMinecraftXpOrb() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  const freqs = [1046.5, 1174.66, 1318.51, 1567.98];
+  const freq = freqs[Math.floor(Math.random() * freqs.length)];
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, now);
+  osc.frequency.linearRampToValueAtTime(freq * 1.05, now + 0.12);
+
+  gain.gain.setValueAtTime(0.18, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.12);
+}
+
+/** Authentic Minecraft Level Up Fanfare (Enchanting 5-note shimmering arpeggio) */
+export function playMinecraftLevelUp() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  // C5, E5, G5, B5, C6 shimmering triad
+  const notes = [523.25, 659.25, 783.99, 987.77, 1046.5];
+  notes.forEach((freq, idx) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const noteTime = now + idx * 0.08;
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, noteTime);
+
+    gain.gain.setValueAtTime(0.16, noteTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.28);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(noteTime);
+    osc.stop(noteTime + 0.28);
+  });
+}
+
+/** Minecraft Anvil / Heavy Block placement (for Cartridge deploy & slot lock) */
+export function playMinecraftAnvil() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  // Deep metallic clank
+  const osc1 = ctx.createOscillator();
+  const gain1 = ctx.createGain();
+  osc1.type = 'sawtooth';
+  osc1.frequency.setValueAtTime(260, now);
+  osc1.frequency.exponentialRampToValueAtTime(80, now + 0.25);
+  gain1.gain.setValueAtTime(0.3, now);
+  gain1.gain.exponentialRampToValueAtTime(0.005, now + 0.25);
+  osc1.connect(gain1);
+  gain1.connect(ctx.destination);
+  osc1.start(now);
+  osc1.stop(now + 0.25);
+
+  // High metallic ringing overtone
+  const osc2 = ctx.createOscillator();
+  const gain2 = ctx.createGain();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(1760, now);
+  osc2.frequency.exponentialRampToValueAtTime(880, now + 0.4);
+  gain2.gain.setValueAtTime(0.18, now);
+  gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+  osc2.connect(gain2);
+  gain2.connect(ctx.destination);
+  osc2.start(now);
+  osc2.stop(now + 0.4);
+}
+
+/** Minecraft Item Pickup Pop */
+export function playMinecraftPop() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(400, now);
+  osc.frequency.exponentialRampToValueAtTime(950, now + 0.08);
+
+  gain.gain.setValueAtTime(0.2, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.08);
+}
+
+/** Minecraft Redstone Piston Sound (for Daemon start/stop) */
+export function playMinecraftPiston(isExtend: boolean) {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  if (isExtend) {
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.linearRampToValueAtTime(320, now + 0.09);
+  } else {
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.linearRampToValueAtTime(110, now + 0.09);
+  }
+
+  gain.gain.setValueAtTime(0.25, now);
+  gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.1);
+}
+

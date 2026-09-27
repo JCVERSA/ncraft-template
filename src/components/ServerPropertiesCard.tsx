@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
-import { ChevronDown, SlidersHorizontal, Copy, Check } from 'lucide-react';
+import { ChevronDown, Copy, Check, Settings } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ServerProperties, GameMode, Difficulty } from '../types';
-import { playButtonClick, playSwitchSound } from '../utils/soundEffects';
+import { playMinecraftClick, playMinecraftStoneClick, playMinecraftXpOrb } from '../utils/soundEffects';
+import {
+  RepeaterIcon,
+  DiamondSwordIcon,
+  IronSwordIcon,
+  BrickIcon,
+  MapIcon,
+  BreadIcon,
+  SkullIcon,
+  CommandBlockIcon,
+} from './MinecraftIcons';
 
 interface ServerPropertiesCardProps {
   config: ServerProperties;
@@ -16,35 +27,38 @@ export const ServerPropertiesCard: React.FC<ServerPropertiesCardProps> = ({
 }) => {
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [seedCopied, setSeedCopied] = useState(false);
+  const [slotDirection, setSlotDirection] = useState<'up' | 'down'>('up');
 
   const handleModeChange = (mode: GameMode) => {
-    playButtonClick();
+    playMinecraftClick();
     onChangeConfig({ gamemode: mode });
     onLogMessage('CONF', `Game mode set to ${mode.toUpperCase()}`);
   };
 
   const handleDifficultyChange = (diff: Difficulty) => {
-    playButtonClick();
+    playMinecraftClick();
     onChangeConfig({ difficulty: diff });
     onLogMessage('CONF', `Difficulty adjusted to ${diff.toUpperCase()}`);
   };
 
   const handleSlotIncrement = () => {
-    playButtonClick();
+    playMinecraftClick();
     if (config.maxPlayers < 100) {
+      setSlotDirection('up');
       onChangeConfig({ maxPlayers: config.maxPlayers + 1 });
     }
   };
 
   const handleSlotDecrement = () => {
-    playButtonClick();
+    playMinecraftClick();
     if (config.maxPlayers > 1) {
+      setSlotDirection('down');
       onChangeConfig({ maxPlayers: config.maxPlayers - 1 });
     }
   };
 
   const handleCopySeed = () => {
-    playButtonClick();
+    playMinecraftClick();
     if (navigator?.clipboard) {
       navigator.clipboard.writeText(config.worldSeed).catch(() => {});
     }
@@ -53,116 +67,125 @@ export const ServerPropertiesCard: React.FC<ServerPropertiesCardProps> = ({
   };
 
   const handleCheatsToggle = () => {
-    playSwitchSound();
+    playMinecraftStoneClick();
     const nextVal = !config.cheatsEnabled;
     onChangeConfig({ cheatsEnabled: nextVal });
     if (nextVal) {
-      onLogMessage('WARN', 'CHEATS ENABLED // ACHIEVEMENTS DEACTIVATED');
+      onLogMessage('WARN', 'COMMAND BLOCKS & CHEATS ENABLED // ACHIEVEMENTS DEACTIVATED');
     } else {
       onLogMessage('INFO', 'Cheats disabled.');
     }
   };
 
   return (
-    <div className="bg-[#FFE600] border-4 border-black p-4 md:p-5 brutal-shadow-lg">
+    <div className="mc-panel p-4 md:p-5 select-none">
       {/* Card Header */}
-      <div className="flex items-center justify-between pb-3 border-b-4 border-black mb-4 md:mb-5">
+      <div className="flex items-center justify-between pb-3 border-b-2 border-black/60 mb-4 md:mb-5">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🎛️</span>
-          <span className="font-archivo text-base md:text-lg uppercase text-black">
-            SERVER.PROPERTIES CONTROLS
+          <RepeaterIcon size={18} />
+          <span className="font-pixel text-[11px] md:text-xs uppercase text-zinc-100 tracking-wide">
+            SERVER.PROPERTIES
           </span>
         </div>
-        <span className="bg-[#FF4D8D] text-white font-pixel text-[8px] md:text-[9px] px-2 py-1 border-2 border-black">
-          PROTOCOL V662
+        <span className="bg-[#18181b] text-[#55ff55] font-pixel text-[8px] md:text-[9px] px-2 py-0.5 border border-black font-bold">
+          BEDROCK CONFIG
         </span>
       </div>
 
       {/* MOTD & Level Save Slot */}
-      <div className="space-y-3 md:space-y-4 mb-4 md:mb-5">
+      <div className="space-y-3 mb-4">
         <div>
           <label
-            className="block font-archivo text-xs uppercase mb-1 flex items-center justify-between text-black"
+            className="block font-pixel text-[8px] uppercase mb-1.5 flex items-center justify-between text-[#DBC2AD]"
             htmlFor="cfg-server-name"
           >
             <span>SERVER MOTD BANNER</span>
-            <span className="font-pixel text-[8px] text-pink-600">[ARCADE MARQUEE]</span>
+            <span className="text-[#00F0FF]">§b[IN-GAME SERVER LIST]</span>
           </label>
           <input
             id="cfg-server-name"
             type="text"
             value={config.serverName}
             onChange={(e) => onChangeConfig({ serverName: e.target.value })}
-            className="w-full bg-white border-3 border-black p-2 md:p-2.5 font-chakra text-sm md:text-base font-bold text-black focus:bg-yellow-50 focus:outline-none brutal-shadow-sm"
+            className="w-full mc-inset p-2.5 font-mono-code text-sm font-bold text-[#00F0FF] bg-[#0E0C10] focus:outline-none focus:ring-1 focus:ring-[#FF9900] transition-all shadow-[inset_2px_2px_0px_#08060A]"
           />
         </div>
 
         <div>
           <label
-            className="block font-archivo text-xs uppercase mb-1 flex items-center justify-between text-black"
+            className="block font-pixel text-[8px] uppercase mb-1.5 flex items-center justify-between text-[#DBC2AD]"
             htmlFor="cfg-level-name"
           >
             <span>ACTIVE WORLD SAVE SLOT (LEVEL-NAME)</span>
-            <span className="font-pixel text-[8px] text-purple-700">[SLOT A]</span>
+            <span className="text-[#FF9900]">§6[WORLDS/FOLDER]</span>
           </label>
           <input
             id="cfg-level-name"
             type="text"
             value={config.levelName}
             onChange={(e) => onChangeConfig({ levelName: e.target.value })}
-            className="w-full bg-white border-3 border-black p-2 md:p-2.5 font-chakra text-sm md:text-base font-bold text-black focus:bg-yellow-50 focus:outline-none brutal-shadow-sm"
+            className="w-full mc-inset p-2.5 font-mono-code text-sm font-bold text-[#00F0FF] bg-[#0E0C10] focus:outline-none focus:ring-1 focus:ring-[#FF9900] transition-all shadow-[inset_2px_2px_0px_#08060A]"
           />
         </div>
       </div>
 
-      {/* Tactile Game Mode Switcher */}
-      <div className="mb-4 md:mb-5">
-        <label className="block font-archivo text-xs uppercase mb-1.5 text-black">
+      {/* Game Mode Selector with Minecraft Buttons */}
+      <div className="mb-4">
+        <label className="block font-pixel text-[8px] uppercase mb-1.5 text-[#DBC2AD]">
           GAMEPLAY MODE SELECTOR
         </label>
-        <div className="grid grid-cols-3 gap-1.5 md:gap-2">
-          {(['survival', 'creative', 'adventure'] as GameMode[]).map((mode) => {
+        <div className="grid grid-cols-3 gap-1.5">
+          {(
+            [
+              { mode: 'survival', icon: DiamondSwordIcon, label: 'SURVIVAL', activeClass: 'mc-btn-red font-bold' },
+              { mode: 'creative', icon: BrickIcon, label: 'CREATIVE', activeClass: 'mc-btn-ignite font-bold' },
+              { mode: 'adventure', icon: MapIcon, label: 'ADVENTURE', activeClass: 'mc-btn-portal font-bold' },
+            ] as const
+          ).map(({ mode, icon: ModeIcon, label, activeClass }) => {
             const isSelected = config.gamemode === mode;
-            const icon =
-              mode === 'survival' ? '⚔️' : mode === 'creative' ? '🧱' : '🗺️';
             return (
               <button
                 key={mode}
                 type="button"
                 onClick={() => handleModeChange(mode)}
-                className={`py-2 md:py-2.5 px-1 md:px-2 border-3 border-black font-archivo text-[10px] md:text-xs uppercase brutal-shadow-sm brutal-press cursor-pointer ${
-                  isSelected
-                    ? 'bg-black text-[#FFE600]'
-                    : 'bg-white text-black hover:bg-pink-100'
+                className={`mc-btn py-2 flex items-center justify-center gap-1.5 ${
+                  isSelected ? activeClass : 'opacity-85 hover:opacity-100'
                 }`}
               >
-                {icon} {mode.toUpperCase()}
+                <ModeIcon size={14} />
+                <span className="font-pixel text-[8px]">{label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Difficulty Stepper Buttons */}
-      <div className="mb-4 md:mb-5">
-        <label className="block font-archivo text-xs uppercase mb-1.5 text-black">
+      {/* Difficulty Level Buttons */}
+      <div className="mb-4">
+        <label className="block font-pixel text-[8px] uppercase mb-1.5 text-[#DBC2AD]">
           DIFFICULTY LEVEL
         </label>
-        <div className="grid grid-cols-4 gap-1 md:gap-1.5">
-          {(['peaceful', 'easy', 'normal', 'hard'] as Difficulty[]).map((diff) => {
+        <div className="grid grid-cols-4 gap-1.5">
+          {(
+            [
+              { diff: 'peaceful', icon: BreadIcon, label: 'PEACEFUL', activeClass: 'mc-btn-green font-bold' },
+              { diff: 'easy', icon: IronSwordIcon, label: 'EASY', activeClass: 'mc-btn-cyan font-bold' },
+              { diff: 'normal', icon: DiamondSwordIcon, label: 'NORMAL', activeClass: 'mc-btn-gold font-bold' },
+              { diff: 'hard', icon: SkullIcon, label: 'HARD', activeClass: 'mc-btn-red font-bold' },
+            ] as const
+          ).map(({ diff, icon: DiffIcon, label, activeClass }) => {
             const isSelected = config.difficulty === diff;
             return (
               <button
                 key={diff}
                 type="button"
                 onClick={() => handleDifficultyChange(diff)}
-                className={`py-1.5 md:py-2 border-2 border-black font-pixel text-[7px] md:text-[8px] uppercase brutal-shadow-sm brutal-press cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#FF4D8D] text-white'
-                    : 'bg-white text-black hover:bg-cyan-100'
+                className={`mc-btn py-1.5 px-1 flex flex-col items-center justify-center text-center gap-1 ${
+                  isSelected ? activeClass : 'opacity-85 hover:opacity-100'
                 }`}
               >
-                {diff.toUpperCase()}
+                <DiffIcon size={14} />
+                <span className="font-pixel text-[7px] mt-0.5">{label}</span>
               </button>
             );
           })}
@@ -170,37 +193,31 @@ export const ServerPropertiesCard: React.FC<ServerPropertiesCardProps> = ({
       </div>
 
       {/* Max Players & UDP Port */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div>
           <label
-            className="block font-archivo text-xs uppercase mb-1 text-black"
+            className="block font-pixel text-[8px] uppercase mb-1.5 text-zinc-300"
             htmlFor="cfg-max-players"
           >
             MAX PLAYERS SLOTS
           </label>
-          <div className="flex items-center bg-white border-3 border-black brutal-shadow-sm">
+          <div className="flex items-center mc-inset p-1">
             <button
               type="button"
               onClick={handleSlotDecrement}
-              className="w-10 md:w-12 py-1.5 md:py-2 bg-black text-white hover:bg-yellow-400 hover:text-black font-archivo text-lg md:text-xl border-r-2 border-black transition-colors cursor-pointer select-none"
+              className="mc-btn py-1 px-3 text-sm"
             >
               -
             </button>
-            <input
-              id="cfg-max-players"
-              type="number"
-              min={1}
-              max={100}
-              value={config.maxPlayers}
-              onChange={(e) =>
-                onChangeConfig({ maxPlayers: Math.max(1, parseInt(e.target.value) || 1) })
-              }
-              className="w-full text-center bg-transparent py-1.5 md:py-2 font-chakra font-black text-lg md:text-xl text-black focus:outline-none"
-            />
+
+            <div className="w-full h-8 flex items-center justify-center font-pixel text-sm text-[#55ff55]">
+              {config.maxPlayers} SLOTS
+            </div>
+
             <button
               type="button"
               onClick={handleSlotIncrement}
-              className="w-10 md:w-12 py-1.5 md:py-2 bg-black text-white hover:bg-yellow-400 hover:text-black font-archivo text-lg md:text-xl border-l-2 border-black transition-colors cursor-pointer select-none"
+              className="mc-btn py-1 px-3 text-sm"
             >
               +
             </button>
@@ -209,12 +226,12 @@ export const ServerPropertiesCard: React.FC<ServerPropertiesCardProps> = ({
 
         <div>
           <label
-            className="block font-archivo text-xs uppercase mb-1 text-black"
+            className="block font-pixel text-[8px] uppercase mb-1.5 text-zinc-300"
             htmlFor="cfg-port"
           >
-            PORT (UDP/V4)
+            BEDROCK PORT (UDP/V4)
           </label>
-          <div className="flex items-center bg-white border-3 border-black p-1.5 brutal-shadow-sm">
+          <div className="flex items-center mc-inset p-1.5">
             <input
               id="cfg-port"
               type="number"
@@ -222,141 +239,143 @@ export const ServerPropertiesCard: React.FC<ServerPropertiesCardProps> = ({
               onChange={(e) =>
                 onChangeConfig({ port: parseInt(e.target.value) || 19132 })
               }
-              className="w-full font-mono-code font-bold text-sm md:text-base text-black bg-transparent focus:outline-none px-2"
+              className="w-full font-mono-code font-bold text-sm text-[#55ffff] bg-transparent focus:outline-none px-2"
             />
-            <span className="bg-[#00F0FF] text-black font-pixel text-[7px] md:text-[8px] px-1.5 py-1 border border-black shrink-0">
+            <span className="bg-[#18181b] text-zinc-300 font-pixel text-[7px] px-1.5 py-0.5 border border-black shrink-0">
               V6: {config.v6Port}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Advanced Engine Chunks & Cheats Accordion */}
-      <div className="border-3 border-black bg-white brutal-shadow-sm">
+      {/* Advanced World Seed & Cheats Accordion */}
+      <div className="mc-inset overflow-hidden">
         <button
           type="button"
           onClick={() => {
-            playButtonClick();
+            playMinecraftClick();
             setAccordionOpen(!accordionOpen);
           }}
-          className="w-full p-2.5 md:p-3 bg-black text-[#FFE600] flex items-center justify-between font-archivo text-[11px] md:text-xs uppercase cursor-pointer"
+          className="w-full p-2.5 bg-[#252629] hover:bg-[#2e2f33] text-zinc-200 flex items-center justify-between font-pixel text-[8px] uppercase cursor-pointer select-none transition-colors"
         >
           <span className="flex items-center gap-2">
-            <span className="text-sm md:text-base">⚙️</span>
-            <span>ADVANCED ENGINE CHUNKS &amp; CHEATS</span>
+            <CommandBlockIcon size={14} />
+            <span>WORLD SEED, CHUNKS &amp; COMMAND BLOCKS</span>
           </span>
-          <ChevronDown
-            className={`w-5 h-5 transition-transform duration-200 stroke-[3] ${
-              accordionOpen ? 'rotate-180' : ''
-            }`}
-          />
+          <motion.div
+            animate={{ rotate: accordionOpen ? 180 : 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          >
+            <ChevronDown className="w-4 h-4 text-zinc-400 stroke-[3]" />
+          </motion.div>
         </button>
 
-        {accordionOpen && (
-          <div className="p-3 md:p-4 space-y-3 md:space-y-4 bg-yellow-50 border-t-2 border-black">
-            {/* World Seed */}
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="font-archivo text-xs uppercase text-black" htmlFor="cfg-world-seed">
-                  WORLD SEED
-                </label>
+        <AnimatePresence initial={false}>
+          {accordionOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', bounce: 0.12, duration: 0.35 }}
+              className="overflow-hidden bg-[#18181a] border-t border-black p-3 space-y-3"
+            >
+              {/* World Seed */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-pixel text-[8px] text-zinc-300" htmlFor="cfg-world-seed">
+                    WORLD GENERATION SEED
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleCopySeed}
+                    className="font-pixel text-[7px] bg-[#252629] text-[#55ff55] hover:bg-[#323338] px-2 py-0.5 border border-black cursor-pointer flex items-center gap-1 font-bold"
+                  >
+                    {seedCopied ? (
+                      <>
+                        <Check className="w-3 h-3 text-[#55ff55]" />
+                        <span>COPIED!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3 text-zinc-400" />
+                        <span>COPY SEED</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <input
+                  id="cfg-world-seed"
+                  type="text"
+                  value={config.worldSeed}
+                  onChange={(e) => onChangeConfig({ worldSeed: e.target.value })}
+                  className="w-full mc-inset p-2 font-mono-code text-xs text-[#55ffff] focus:outline-none"
+                />
+              </div>
+
+              {/* View Distance & Sim Distance */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="flex justify-between font-pixel text-[7px] text-zinc-300 mb-1">
+                    <span>VIEW DIST:</span>
+                    <span className="text-[#ffaa00]">{config.viewDistance} CHUNKS</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={12}
+                    max={32}
+                    step={2}
+                    value={config.viewDistance}
+                    onChange={(e) =>
+                      onChangeConfig({ viewDistance: parseInt(e.target.value) })
+                    }
+                    className="w-full accent-[#55ff55] cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-pixel text-[7px] text-zinc-300 mb-1">
+                    <span>SIM DIST:</span>
+                    <span className="text-[#c084fc]">{config.simulationDistance} CHUNKS</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={4}
+                    max={12}
+                    step={2}
+                    value={config.simulationDistance}
+                    onChange={(e) =>
+                      onChangeConfig({ simulationDistance: parseInt(e.target.value) })
+                    }
+                    className="w-full accent-[#c084fc] cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Redstone Command Blocks Toggle */}
+              <div className="flex items-center justify-between p-2 mc-inset">
+                <div>
+                  <div className="font-pixel text-[8px] text-zinc-200">
+                    ALLOW CHEATS &amp; COMMAND BLOCKS
+                  </div>
+                  <div className="font-pixel text-[6px] text-[#ef4444] mt-0.5">
+                    Deactivates Xbox Live Achievements on BDS
+                  </div>
+                </div>
                 <button
                   type="button"
-                  onClick={handleCopySeed}
-                  className="font-pixel text-[8px] bg-[#00F0FF] text-black px-1.5 py-0.5 border border-black hover:bg-yellow-300 cursor-pointer flex items-center gap-1"
+                  onClick={handleCheatsToggle}
+                  className={`mc-btn px-3 py-1 text-[8px] ${
+                    config.cheatsEnabled ? 'mc-btn-green' : 'mc-btn-red'
+                  }`}
                 >
-                  {seedCopied ? (
-                    <>
-                      <Check className="w-3 h-3 text-black" />
-                      <span>COPIED!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3 text-black" />
-                      <span>COPY SEED</span>
-                    </>
-                  )}
+                  {config.cheatsEnabled ? 'ENABLED' : 'DISABLED'}
                 </button>
               </div>
-              <input
-                id="cfg-world-seed"
-                type="text"
-                value={config.worldSeed}
-                onChange={(e) => onChangeConfig({ worldSeed: e.target.value })}
-                className="w-full bg-white border-2 border-black p-2 font-mono-code text-xs font-bold text-black focus:outline-none"
-              />
-            </div>
-
-            {/* Sliders for View & Sim Distance */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="flex justify-between font-pixel text-[8px] mb-1">
-                  <span>VIEW DIST</span>
-                  <span className="font-bold text-pink-600">
-                    {config.viewDistance} CHUNKS
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={12}
-                  max={32}
-                  step={2}
-                  value={config.viewDistance}
-                  onChange={(e) =>
-                    onChangeConfig({ viewDistance: parseInt(e.target.value) })
-                  }
-                  className="w-full accent-black cursor-pointer"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between font-pixel text-[8px] mb-1">
-                  <span>SIM DIST</span>
-                  <span className="font-bold text-purple-700">
-                    {config.simulationDistance} CHUNKS
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={4}
-                  max={12}
-                  step={2}
-                  value={config.simulationDistance}
-                  onChange={(e) =>
-                    onChangeConfig({ simulationDistance: parseInt(e.target.value) })
-                  }
-                  className="w-full accent-black cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {/* Cheats Toggle Switch */}
-            <div className="flex items-center justify-between p-2 md:p-2.5 bg-white border-2 border-black">
-              <div>
-                <div className="font-archivo text-xs uppercase text-black">
-                  COMMAND BLOCKS &amp; CHEATS
-                </div>
-                <div className="font-pixel text-[7px] text-red-600">
-                  Xbox Achievements Disabled
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleCheatsToggle}
-                className="w-13 md:w-14 h-7 bg-black p-0.5 border-2 border-black relative transition-colors cursor-pointer"
-              >
-                <div
-                  className={`w-5 h-5 border border-black transition-transform duration-200 ${
-                    config.cheatsEnabled
-                      ? 'translate-x-6 bg-[#22C55E]'
-                      : 'translate-x-0 bg-[#FF4D8D]'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
 };
+

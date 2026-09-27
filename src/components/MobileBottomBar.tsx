@@ -1,5 +1,7 @@
 import React from 'react';
-import { playCoinSound, playDeployFanfare } from '../utils/soundEffects';
+import { motion, AnimatePresence } from 'motion/react';
+import { playMinecraftAnvil, playMinecraftLevelUp } from '../utils/soundEffects';
+import { AlertIcon, ClockIcon, LightningIcon } from './MinecraftIcons';
 
 interface MobileBottomBarProps {
   isFlashing: boolean;
@@ -11,39 +13,47 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
   onTriggerDeploy,
 }) => {
   return (
-    <aside className="fixed bottom-0 left-0 right-0 z-50 p-2.5 bg-black/90 backdrop-blur-md border-t-4 border-black">
-      <div className="max-w-[440px] mx-auto">
-        {/* Active status bubble if flashing */}
-        {isFlashing && (
-          <div className="mb-1.5 p-1 bg-black border-2 border-red-500 text-yellow-300 font-pixel text-center text-[9px] animate-bounce">
-            ⚡ WARNING: REBUILDING NATIVE BDS INSTANCE!
-          </div>
-        )}
+    <aside className="fixed bottom-0 left-0 right-0 z-50 p-2.5 bg-[#141416]/95 backdrop-blur-md border-t-2 border-black/80">
+      <div className="max-w-[440px] mx-auto select-none">
+        {/* Active status banner if flashing */}
+        <AnimatePresence>
+          {isFlashing && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+              className="mb-1.5 p-1 bg-[#2a1010] border border-[#ef4444] text-[#ffaa00] font-pixel text-center text-[8px] flex items-center justify-center gap-1.5"
+            >
+              <AlertIcon size={12} /> SMELTING BEDROCK BDS CONTAINER IN PROGRESS...
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <button
           type="button"
           onClick={() => {
-            playCoinSound();
-            setTimeout(playDeployFanfare, 150);
+            playMinecraftAnvil();
+            setTimeout(playMinecraftLevelUp, 180);
             onTriggerDeploy();
           }}
           disabled={isFlashing}
-          className="w-full bg-[#FFE600] active:bg-yellow-400 disabled:opacity-80 text-black border-4 border-black p-2.5 md:p-3 font-archivo text-sm md:text-base uppercase tracking-wider flex flex-col items-center justify-center brutal-shadow brutal-press relative overflow-hidden cursor-pointer"
+          className="w-full mc-btn mc-btn-green py-3 flex flex-col items-center justify-center cursor-pointer disabled:opacity-80"
         >
-          <div className="flex items-center gap-2 leading-none">
-            <span className="text-lg md:text-xl animate-spin" style={{ animationDuration: '4s' }}>
-              🕹️
+          <div className="flex items-center gap-2">
+            <span className="inline-flex">
+              {isFlashing ? <ClockIcon size={16} /> : <LightningIcon size={16} />}
             </span>
-            <span className="drop-shadow-[1px_1px_0px_#fff]">
-              {isFlashing ? '⚡ FLASHING CARTRIDGE...' : 'INSERT COIN // START ENGINE'}
+            <span className="font-pixel text-xs text-white drop-shadow-[1px_1px_0_#000]">
+              {isFlashing ? 'SMELTING ROM...' : 'DEPLOY BEDROCK SERVER'}
             </span>
-            <span className="text-lg md:text-xl">⚡</span>
           </div>
-          <span className="font-pixel text-[8px] bg-black text-[#00F0FF] px-2 py-0.5 mt-1 border border-black">
-            [PRESS 1P BUTTON TO REBUILD CONTAINER]
+          <span className="font-pixel text-[7px] text-[#55ff55] mt-0.5">
+            [TAP TO RECOMPILE &amp; LOCK 20.0 TPS]
           </span>
         </button>
       </div>
     </aside>
   );
 };
+

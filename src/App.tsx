@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ServerProperties,
   CartridgeConfig,
@@ -7,6 +8,7 @@ import {
   LogEntry,
   TelemetryData,
   MascotState,
+  MinecraftDimension,
 } from './types';
 import { ArcadeHeader } from './components/ArcadeHeader';
 import { HeroConsoleBar } from './components/HeroConsoleBar';
@@ -19,12 +21,16 @@ import { TelemetryScoreCard } from './components/TelemetryScoreCard';
 import { EnlistOpModal } from './components/EnlistOpModal';
 import { CartridgeArtworkModal } from './components/CartridgeArtworkModal';
 import { MobileBottomBar } from './components/MobileBottomBar';
+import { AmbientParticles } from './components/AmbientParticles';
 import {
   isSoundEnabled,
   setSoundEnabled,
-  playButtonClick,
-  playCoinSound,
-  playDeployFanfare,
+  playMinecraftClick,
+  playMinecraftStoneClick,
+  playMinecraftAnvil,
+  playMinecraftLevelUp,
+  playMinecraftPop,
+  playMinecraftPiston,
   playErrorBuzzer,
   playPurgeSound,
 } from './utils/soundEffects';
@@ -32,36 +38,17 @@ import {
 const CARTRIDGES_DATA: CartridgeConfig[] = [
   {
     id: 'nether-bastion',
-    expansionName: 'NETHER SMP EXPANSION',
+    expansionName: 'NETHER BASTION SMP',
     romSize: 'ROM 64MB',
     title: 'NETHER BASTION SMP',
     subtitle: 'OFFICIAL BDS ENGINE',
-    icons: '⚔️ 👾 🔥',
+    icons: 'SWORD / PORTAL / FLAME',
     ratedTps: '20 TPS',
     version: '1.20.73.01',
     boxartStyle: 'nether',
-  },
-  {
-    id: 'end-fortress',
-    expansionName: 'VOID REALM PACK',
-    romSize: 'ROM 128MB',
-    title: 'END CITY RAIDERS',
-    subtitle: 'SHULKER SURVIVAL',
-    icons: '⚔️ 👁️ 🔮',
-    ratedTps: '20 TPS',
-    version: '1.20.73.01',
-    boxartStyle: 'end',
-  },
-  {
-    id: 'deep-dark',
-    expansionName: 'SCULK LABS EXTENSION',
-    romSize: 'ROM 64MB',
-    title: 'WARDEN ANCIENT CITY',
-    subtitle: 'STEALTH HARVEST',
-    icons: '⚔️ 🛡️ 💎',
-    ratedTps: '19.9 TPS',
-    version: '1.20.80.22',
-    boxartStyle: 'nether',
+    dimensionTheme: 'nether',
+    discName: 'Lena Raine - Pigstep',
+    rarity: 'epic',
   },
   {
     id: 'overworld-mega',
@@ -69,30 +56,62 @@ const CARTRIDGES_DATA: CartridgeConfig[] = [
     romSize: 'ROM 32MB',
     title: 'OVERWORLD KINGDOM',
     subtitle: 'BEDROCK SURVIVAL',
-    icons: '🌲 ⛏️ 🏰',
+    icons: 'TREE / PICKAXE / CASTLE',
     ratedTps: '20 TPS',
     version: '1.20.60.24',
     boxartStyle: 'overworld',
+    dimensionTheme: 'overworld',
+    discName: 'Lena Raine - Otherside',
+    rarity: 'rare',
+  },
+  {
+    id: 'end-fortress',
+    expansionName: 'VOID REALM PACK',
+    romSize: 'ROM 128MB',
+    title: 'END CITY RAIDERS',
+    subtitle: 'SHULKER SURVIVAL',
+    icons: 'SWORD / ENDER-EYE / STAR',
+    ratedTps: '20 TPS',
+    version: '1.20.73.01',
+    boxartStyle: 'end',
+    dimensionTheme: 'the_end',
+    discName: 'C418 - Chirp (Remix)',
+    rarity: 'legendary',
+  },
+  {
+    id: 'deep-dark',
+    expansionName: 'SCULK LABS EXTENSION',
+    romSize: 'ROM 64MB',
+    title: 'WARDEN ANCIENT CITY',
+    subtitle: 'STEALTH HARVEST',
+    icons: 'SWORD / SHIELD / DIAMOND',
+    ratedTps: '19.9 TPS',
+    version: '1.20.80.22',
+    boxartStyle: 'nether',
+    dimensionTheme: 'nether',
+    discName: 'Samuel Åberg - 5',
+    rarity: 'epic',
   },
 ];
 
 const INITIAL_STEPS: PipelineStep[] = [
-  { id: 1, name: '1. STOP CONTAINER PROCESS', time: '0.4s', status: 'pass' },
-  { id: 2, name: '2. WIPE TEMPORARY RUNTIME', time: '1.1s', status: 'pass' },
-  { id: 3, name: '3. DOWNLOAD BEDROCK BDS ZIP', time: '3.8s', status: 'pass' },
-  { id: 4, name: '4. EXTRACT COMPONENT ASSETS', time: 'PROCESSING...', status: 'active' },
-  { id: 5, name: '5. WRITE SERVER.PROPERTIES', time: 'PENDING', status: 'wait' },
+  { id: 1, name: '1. HALT CONTAINER PROCESS', time: '0.4s', status: 'pass' },
+  { id: 2, name: '2. FLUSH LEVEL CHUNKS CACHE', time: '1.1s', status: 'pass' },
+  { id: 3, name: '3. FETCH BEDROCK BDS ARCHIVE', time: '3.8s', status: 'pass' },
+  { id: 4, name: '4. SMELT WORLD PACKS INTO RAM', time: 'CRAFTING...', status: 'active' },
+  { id: 5, name: '5. COMMIT SERVER.PROPERTIES', time: 'PENDING', status: 'wait' },
 ];
 
 const INITIAL_OPERATORS: Operator[] = [
   {
     id: 'op-1',
     playerSlot: '1P',
-    slotBg: '#FFE600',
+    slotBg: '#22c55e',
     gamertag: 'AlexCraft',
     xuid: '2535418902837419',
     role: 'OP LVL 4',
-    roleBg: '#22C55E',
+    roleBg: '#15803d',
+    skinType: 'alex',
   },
   {
     id: 'op-2',
@@ -101,7 +120,8 @@ const INITIAL_OPERATORS: Operator[] = [
     gamertag: 'SteveVoid',
     xuid: '2535467192804112',
     role: 'MODERATOR',
-    roleBg: '#00F0FF',
+    roleBg: '#0369a1',
+    skinType: 'steve',
   },
   {
     id: 'op-corrupt',
@@ -121,11 +141,12 @@ function getFormattedTime(): string {
 export default function App() {
   // View mode switcher: 'auto' (responsive), 'desktop' (cabinet), 'mobile' (handheld)
   const [viewMode, setViewMode] = useState<'auto' | 'desktop' | 'mobile'>('auto');
+  const [dimension, setDimension] = useState<MinecraftDimension>('overworld');
   const [soundMuted, setSoundMuted] = useState(!isSoundEnabled());
 
   // Server state
   const [daemonOnline, setDaemonOnline] = useState(true);
-  const [credits, setCredits] = useState(4);
+  const [credits, setCredits] = useState(8);
   const [selectedCartridge, setSelectedCartridge] = useState<CartridgeConfig>(CARTRIDGES_DATA[0]);
   const [selectedVersion, setSelectedVersion] = useState('1.20.73.01');
   const [isFlashing, setIsFlashing] = useState(false);
@@ -155,16 +176,16 @@ export default function App() {
 
   // CRT Terminal Logs
   const [logs, setLogs] = useState<LogEntry[]>([
-    { id: '1', time: '04:12:10', tag: 'INFO', message: 'BDS Engine v1.20.73 initialized' },
-    { id: '2', time: '04:12:11', tag: 'INFO', message: 'Port 19132 UDP online. Ready!' },
-    { id: '3', time: '04:12:12', tag: 'CONF', message: 'Level: world_nether_s1 loaded.' },
-    { id: '4', time: '04:12:13', tag: 'PASS', message: 'Whitelist: 14 players cached.' },
-    { id: '5', time: '04:12:14', tag: 'WARN', message: 'Tick spike: 28ms buffer alloc' },
-    { id: '6', time: '04:12:15', tag: 'INFO', message: 'SteveVoid connected (2P joined)' },
-    { id: '7', time: '04:12:16', tag: 'PASS', message: 'Engine live @ play.nebulacraft.net' },
+    { id: '1', time: '04:12:10', tag: 'INFO', message: 'Minecraft Bedrock Dedicated Engine v1.20.73 initialized' },
+    { id: '2', time: '04:12:11', tag: 'INFO', message: 'UDP Port 19132 online. Listening for Bedrock peers.' },
+    { id: '3', time: '04:12:12', tag: 'CONF', message: 'World level: world_nether_s1 loaded (Seed: -7482910482918392)' },
+    { id: '4', time: '04:12:13', tag: 'PASS', message: 'Whitelist: 14 player UUIDs cached.' },
+    { id: '5', time: '04:12:14', tag: 'WARN', message: 'Tick spike: 28ms chunk buffer pre-alloc' },
+    { id: '6', time: '04:12:15', tag: 'INFO', message: 'SteveVoid (2P) connected with XUID 2535467192804112' },
+    { id: '7', time: '04:12:16', tag: 'PASS', message: 'BDS Cluster live @ play.nebulacraft.net:19132' },
   ]);
 
-  // Telemetry telemetry
+  // Telemetry
   const [telemetry, setTelemetry] = useState<TelemetryData>({
     tps: 20.0,
     ramUsageGb: 1.8,
@@ -173,11 +194,19 @@ export default function App() {
     activeChunks: 1420,
     freeStorageGb: 24.2,
     rank: 'RANK S',
+    hearts: 10,
+    hunger: 10,
+    armor: 10,
   });
 
   // Modals
   const [isEnlistOpen, setIsEnlistOpen] = useState(false);
   const [isVaultOpen, setIsVaultOpen] = useState(false);
+
+  // Set dimension class on body
+  useEffect(() => {
+    document.body.className = `theme-${dimension} text-zinc-100 selection:bg-[#55ff55] selection:text-black min-h-screen`;
+  }, [dimension]);
 
   const toggleSound = () => {
     const nextVal = !soundMuted;
@@ -188,7 +217,7 @@ export default function App() {
   const addLog = useCallback(
     (tag: 'INFO' | 'PASS' | 'WARN' | 'CONF' | 'CMD' | 'K.O.', message: string) => {
       setLogs((prev) => [
-        ...prev.slice(-120), // keep last 120 lines
+        ...prev.slice(-120),
         {
           id: `${Date.now()}-${Math.random()}`,
           time: getFormattedTime(),
@@ -205,24 +234,23 @@ export default function App() {
     setIsFlashing(true);
     setMascotState('active');
     setProgressPercent(15);
-    addLog('WARN', 'Arcade operator triggered BDS ROM re-flash!');
+    addLog('WARN', 'Operator initiated Bedrock Dedicated Server ROM rebuild!');
 
-    // Simulated progressive pipeline steps
     setTimeout(() => {
       setProgressPercent(40);
-      addLog('CONF', 'Decompressing Bedrock Dedicated Server assets...');
+      addLog('CONF', 'Decompressing native BDS binaries and LevelDB world chunks...');
     }, 800);
 
     setTimeout(() => {
       setProgressPercent(75);
-      addLog('PASS', `Flashing world: ${serverConfig.levelName} to Cartridge RAM.`);
+      addLog('PASS', `Flashing dimension world: ${serverConfig.levelName} to cartridge memory.`);
     }, 1600);
 
     setTimeout(() => {
       setProgressPercent(100);
       setIsFlashing(false);
-      addLog('PASS', 'Cartridge ROM boot sequence complete. 20.0 TPS locked!');
-      playDeployFanfare();
+      addLog('PASS', 'Bedrock Dedicated Server booted successfully. 20.0 TPS locked!');
+      playMinecraftLevelUp();
     }, 2400);
   };
 
@@ -242,7 +270,7 @@ export default function App() {
   // Insert Coin
   const handleInsertCoin = () => {
     setCredits((prev) => prev + 1);
-    addLog('PASS', `🪙 COIN INSERTED! Total continues: ${credits + 1}`);
+    addLog('PASS', `[EMERALD +1] Emerald inserted! Total stored: ${credits + 1}`);
   };
 
   // Clear Logs
@@ -252,7 +280,7 @@ export default function App() {
         id: `${Date.now()}`,
         time: getFormattedTime(),
         tag: 'CONF',
-        message: '[CRT RESET] BUFFER CLEARED. READY.',
+        message: '[BDS BUFFER RESET] READY FOR INSTRUCTIONS.',
       },
     ]);
   };
@@ -269,7 +297,7 @@ export default function App() {
       if (root === '/help') {
         addLog(
           'INFO',
-          'Commands: /op <name>, /deop <name>, /kick <name>, /say <msg>, /time set <day|night>, /gamemode <mode>, /tps, /stop, /start'
+          'Commands: /op <player>, /deop <player>, /kick <player>, /say <msg>, /time set <day|night>, /weather <clear|rain>, /gamemode <survival|creative>, /tps, /stop, /start'
         );
       } else if (root === '/say') {
         const msg = parts.slice(1).join(' ') || 'Hello world!';
@@ -280,14 +308,14 @@ export default function App() {
         const newOp: Operator = {
           id: `op-${Date.now()}`,
           playerSlot: `${operators.length + 1}P`,
-          slotBg: '#FFE600',
+          slotBg: '#22c55e',
           gamertag: target,
           xuid: newXuid,
           role: 'OP LVL 4',
-          roleBg: '#22C55E',
+          roleBg: '#15803d',
         };
         setOperators((prev) => [...prev, newOp]);
-        addLog('PASS', `Enlisted operator: ${target} (${newXuid})`);
+        addLog('PASS', `Granted OP permissions to: ${target} (${newXuid})`);
       } else if (root === '/kick' && parts[1]) {
         const target = parts[1];
         setOperators((prev) => prev.filter((o) => o.gamertag.toLowerCase() !== target.toLowerCase()));
@@ -301,7 +329,9 @@ export default function App() {
           addLog('WARN', 'Unknown gamemode. Use survival, creative, or adventure.');
         }
       } else if (root === '/time' && parts[2]) {
-        addLog('CONF', `Time set to ${parts[2]}`);
+        addLog('CONF', `World time adjusted to ${parts[2]}`);
+      } else if (root === '/weather') {
+        addLog('CONF', `Weather updated to ${parts[1] || 'clear'}`);
       } else if (root === '/stop') {
         setDaemonOnline(false);
         addLog('WARN', 'Server daemon halted via command.');
@@ -319,7 +349,7 @@ export default function App() {
   // Add operator from modal
   const handleAddOperator = (xuid: string, gamertag: string, role: string) => {
     const slotNumber = `${operators.length + 1}P`;
-    const slotColors = ['#FFE600', '#00F0FF', '#FF4D8D', '#A855F7'];
+    const slotColors = ['#22c55e', '#00F0FF', '#FF4D8D', '#A855F7'];
     const chosenColor = slotColors[operators.length % slotColors.length];
 
     const newOp: Operator = {
@@ -329,7 +359,7 @@ export default function App() {
       gamertag,
       xuid,
       role,
-      roleBg: role.includes('OP') ? '#22C55E' : role.includes('MOD') ? '#00F0FF' : '#A855F7',
+      roleBg: role.includes('OP') ? '#15803d' : role.includes('MOD') ? '#0369a1' : '#6b21a8',
     };
 
     setOperators((prev) => [...prev, newOp]);
@@ -354,14 +384,14 @@ export default function App() {
 
     const interval = setInterval(() => {
       setTelemetry((prev) => {
-        const flux = (Math.random() - 0.5) * 0.1;
-        const newTps = Math.min(20.0, Math.max(19.7, 20.0 + flux));
-        const cpuFlux = Math.floor(12 + Math.random() * 6);
+        const flux = (Math.random() - 0.5) * 0.08;
+        const newTps = Math.min(20.0, Math.max(19.8, 20.0 + flux));
+        const cpuFlux = Math.floor(12 + Math.random() * 5);
         return {
           ...prev,
           tps: newTps,
           cpuPercent: cpuFlux,
-          activeChunks: 1420 + Math.floor(Math.random() * 15),
+          activeChunks: 1420 + Math.floor(Math.random() * 12),
         };
       });
     }, 4500);
@@ -372,11 +402,16 @@ export default function App() {
   const endpointUrl = `play.nebulacraft.net:${serverConfig.port}`;
 
   return (
-    <div className="text-black selection:bg-[#FFE600] selection:text-black min-h-screen">
+    <div className="min-h-screen relative text-zinc-100">
+      {/* Ambient Floating Minecraft Dimension Particles */}
+      <AmbientParticles dimension={dimension} />
+
       {/* ==================== TOP MARQUEE TICKER ==================== */}
       <ArcadeHeader
         viewMode={viewMode}
         setViewMode={setViewMode}
+        dimension={dimension}
+        setDimension={setDimension}
         soundMuted={soundMuted}
         toggleSound={toggleSound}
         daemonOnline={daemonOnline}
@@ -385,17 +420,21 @@ export default function App() {
         tps={telemetry.tps}
       />
 
-      {/* ==================== DESKTOP SIMULATOR VIEW (3-COLUMN ARCADE DASHBOARD) ==================== */}
+      {/* ==================== DESKTOP SIMULATOR VIEW (3-COLUMN MINECRAFT CONSOLE) ==================== */}
       {(viewMode === 'desktop' || viewMode === 'auto') && (
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
           className={`${
             viewMode === 'auto' ? 'hidden md:block' : 'block'
-          } max-w-[1540px] mx-auto px-4 md:px-6 pt-6 pb-14`}
+          } max-w-[1540px] mx-auto px-4 md:px-6 pt-6 pb-14 relative z-10`}
         >
           {/* HERO CONSOLE HOOD */}
           <HeroConsoleBar
             endpoint={endpointUrl}
             daemonOnline={daemonOnline}
+            dimension={dimension}
             onToggleDaemon={handleToggleDaemon}
             onOpenSettings={() => setIsVaultOpen(true)}
           />
@@ -422,11 +461,11 @@ export default function App() {
                 onSetMascotState={(state) => {
                   setMascotState(state);
                   if (state === 'idle') {
-                    addLog('INFO', 'Mascot switched to 1P IDLE mode.');
+                    addLog('INFO', 'Mascot switched to IDLE mode.');
                   } else if (state === 'active') {
-                    addLog('PASS', 'Mascot switched to 2P COMBO running mode.');
+                    addLog('PASS', 'Mascot switched to ACTIVE smelting mode.');
                   } else {
-                    addLog('K.O.', 'Mascot triggered K.O. FAIL test state!');
+                    addLog('K.O.', 'Mascot triggered CREEPER FAIL test state!');
                   }
                 }}
                 steps={steps}
@@ -462,23 +501,31 @@ export default function App() {
                 onExecuteCommand={handleExecuteCommand}
               />
 
-              <TelemetryScoreCard telemetry={telemetry} />
+              <TelemetryScoreCard
+                telemetry={telemetry}
+                daemonOnline={daemonOnline}
+                onLogMessage={(tag, msg) => addLog(tag, msg)}
+              />
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ==================== MOBILE HANDHELD CONSOLE VIEW ==================== */}
       {(viewMode === 'mobile' || viewMode === 'auto') && (
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
           className={`${
             viewMode === 'auto' ? 'block md:hidden' : 'block'
-          } max-w-[440px] mx-auto px-3.5 pt-3.5 pb-36 space-y-4`}
+          } max-w-[440px] mx-auto px-3.5 pt-3.5 pb-36 space-y-4 relative z-10`}
         >
           {/* Mobile Hero Bar */}
           <HeroConsoleBar
             endpoint={endpointUrl}
             daemonOnline={daemonOnline}
+            dimension={dimension}
             onToggleDaemon={handleToggleDaemon}
             onOpenSettings={() => setIsVaultOpen(true)}
           />
@@ -503,11 +550,11 @@ export default function App() {
             onSetMascotState={(state) => {
               setMascotState(state);
               if (state === 'idle') {
-                addLog('INFO', 'Mascot switched to 1P IDLE mode.');
+                addLog('INFO', 'Mascot switched to IDLE mode.');
               } else if (state === 'active') {
-                addLog('PASS', 'Mascot switched to 2P COMBO running mode.');
+                addLog('PASS', 'Mascot switched to ACTIVE smelting mode.');
               } else {
-                addLog('K.O.', 'Mascot triggered K.O. FAIL test state!');
+                addLog('K.O.', 'Mascot triggered CREEPER FAIL test state!');
               }
             }}
             steps={steps}
@@ -542,14 +589,18 @@ export default function App() {
             compactHeight={true}
           />
 
-          <TelemetryScoreCard telemetry={telemetry} />
+          <TelemetryScoreCard
+            telemetry={telemetry}
+            daemonOnline={daemonOnline}
+            onLogMessage={(tag, msg) => addLog(tag, msg)}
+          />
 
           {/* Persistent Bottom Floating Action Bar */}
           <MobileBottomBar
             isFlashing={isFlashing}
             onTriggerDeploy={handleTriggerDeploy}
           />
-        </div>
+        </motion.div>
       )}
 
       {/* ==================== ENLIST OPERATOR MODAL ==================== */}
@@ -568,7 +619,8 @@ export default function App() {
         onSelectCartridge={(cart) => {
           setSelectedCartridge(cart);
           setSelectedVersion(cart.version);
-          addLog('CONF', `Swapped cartridge ROM to: ${cart.title} [${cart.expansionName}]`);
+          setDimension(cart.dimensionTheme);
+          addLog('CONF', `Inserted Disc ROM: ${cart.title} [${cart.expansionName}]`);
         }}
       />
     </div>

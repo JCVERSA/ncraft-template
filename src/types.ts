@@ -2,6 +2,7 @@ export type GameMode = 'survival' | 'creative' | 'adventure';
 export type Difficulty = 'peaceful' | 'easy' | 'normal' | 'hard';
 export type DaemonState = 'ONLINE' | 'STOPPED' | 'FLASHING' | 'REBOOTING';
 export type MascotState = 'idle' | 'active' | 'fail';
+export type MinecraftDimension = 'overworld' | 'nether' | 'the_end';
 
 export interface ServerProperties {
   serverName: string;
@@ -27,6 +28,9 @@ export interface CartridgeConfig {
   ratedTps: string;
   version: string;
   boxartStyle: 'nether' | 'end' | 'overworld';
+  discName?: string;
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+  dimensionTheme: MinecraftDimension;
 }
 
 export interface PipelineStep {
@@ -34,6 +38,7 @@ export interface PipelineStep {
   name: string;
   time: string;
   status: 'pass' | 'active' | 'wait' | 'fail';
+  minecraftIcon?: string;
 }
 
 export interface Operator {
@@ -45,6 +50,8 @@ export interface Operator {
   role: string;
   roleBg?: string;
   isCorrupt?: boolean;
+  skinType?: 'steve' | 'alex' | 'creeper' | 'knight' | 'warden';
+  pingMs?: number;
 }
 
 export interface LogEntry {
@@ -62,4 +69,16 @@ export interface TelemetryData {
   activeChunks: number;
   freeStorageGb: number;
   rank: string;
+  hearts: number;      // 0 - 10
+  hunger: number;      // 0 - 10
+  armor: number;       // 0 - 10
 }
+
+export interface NetworkPingSample {
+  time: string;
+  ping: number;
+  stability: number;
+  jitter: number;
+  isSpike?: boolean;
+}
+

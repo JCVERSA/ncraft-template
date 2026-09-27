@@ -1,7 +1,22 @@
-import React from 'react';
-import { Sparkles, Disc, ChevronDown, Heart } from 'lucide-react';
+import React, { useState } from 'react';
+import { Disc, ChevronDown, MoveVertical, Sparkles, Box } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { CartridgeConfig } from '../types';
-import { playButtonClick, playDeployFanfare, playCoinSound } from '../utils/soundEffects';
+import {
+  playMinecraftClick,
+  playMinecraftAnvil,
+  playMinecraftXpOrb,
+  playMinecraftLevelUp,
+  playCartridgeSnapSound,
+} from '../utils/soundEffects';
+import {
+  LightningIcon,
+  ClockIcon,
+  AlertIcon,
+  HeartIcon,
+  EmptyHeartIcon,
+  CartridgeIcons,
+} from './MinecraftIcons';
 
 interface CartridgeSlotCardProps {
   cartridge: CartridgeConfig;
@@ -20,151 +35,257 @@ export const CartridgeSlotCard: React.FC<CartridgeSlotCardProps> = ({
   onTriggerDeploy,
   onOpenCartridgeSelect,
 }) => {
+  const [isLifted, setIsLifted] = useState(false);
+  const [heartsCount, setHeartsCount] = useState(5);
+
+  const handleHeartClick = (index: number) => {
+    playMinecraftClick();
+    setHeartsCount((prev) => (index + 1 === prev ? Math.max(1, prev - 1) : index + 1));
+  };
+
+  const versions = [
+    { ver: '1.20.73.01', label: '1.20.73', tag: 'STABLE' },
+    { ver: '1.20.80.22', label: '1.20.80', tag: 'PREVIEW' },
+    { ver: '1.20.60.24', label: '1.20.60', tag: 'LTS' },
+  ];
+
   return (
-    <div className="bg-[#FF4D8D] border-4 border-black p-4 md:p-5 brutal-shadow-lg relative">
-      {/* Top Cartridge Slot Header */}
-      <div className="flex items-center justify-between pb-3 border-b-4 border-black mb-4">
+    <div className="mc-panel p-4 md:p-5 relative select-none">
+      {/* Top Header */}
+      <div className="flex items-center justify-between pb-3 border-b-2 border-black/60 mb-4">
         <div className="flex items-center gap-2">
-          <span className="font-pixel text-xs text-yellow-300">★ CARTRIDGE SLOT</span>
+          <Disc className="w-4 h-4 text-[#ffaa00] animate-spin" style={{ animationDuration: '6s' }} />
+          <span className="font-pixel text-[11px] text-[#ffaa00] tracking-wide">
+            JUKEBOX // BDS SLOT
+          </span>
         </div>
-        <span className="bg-black text-[#FFE600] font-pixel text-[8px] md:text-[9px] px-2 py-1 border border-black">
-          {isFlashing ? 'FLASHING ROM...' : 'LOCKED & READY'}
-        </span>
+        <motion.span
+          animate={{
+            scale: isFlashing ? [1, 1.05, 1] : 1,
+            backgroundColor: isFlashing ? '#ffaa00' : '#18181b',
+            color: isFlashing ? '#000000' : '#55ff55',
+          }}
+          transition={{ repeat: isFlashing ? Infinity : 0, duration: 0.5 }}
+          className="font-pixel text-[8px] md:text-[9px] px-2 py-0.5 border border-black font-bold"
+        >
+          {isFlashing ? (
+            <span className="flex items-center gap-1 text-black font-bold">
+              <LightningIcon size={11} /> SMELTING ROM...
+            </span>
+          ) : isLifted ? (
+            'PULL TO SWAP'
+          ) : (
+            'DISC INSERTED'
+          )}
+        </motion.span>
       </div>
 
-      {/* Physical 3D Cartridge Shell */}
-      <div
-        className="bg-[#2D2A4A] border-4 border-black rounded-t-lg p-3 relative brutal-shadow cursor-pointer group"
-        onClick={() => {
-          if (onOpenCartridgeSelect) {
-            playButtonClick();
-            onOpenCartridgeSelect();
-          }
-        }}
-        title="Click to view/switch cartridge ROM"
-      >
-        {/* Cartridge Vent Grooves */}
-        <div className="h-5 md:h-6 w-full cartridge-grooves border-2 border-black mb-3" />
+      {/* Physical 3D Minecraft Jukebox / Cartridge Shell with Drag Physics */}
+      <div className="relative group">
+        {/* Connector bay behind the cartridge */}
+        <div className="absolute inset-0 bg-[#121214] border-2 border-black flex flex-col justify-end p-2 items-center text-center">
+          <span className="font-pixel text-[7px] text-[#55ffff] mb-1">
+            BEDROCK COMPATIBILITY PIN BAY
+          </span>
+          <div className="w-full flex justify-around py-1 bg-amber-950/80 border-t border-black">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="w-2.5 h-1.5 bg-[#ffaa00] border border-black" />
+            ))}
+          </div>
+        </div>
 
-        {/* Cartridge Sticker / World Boxart */}
-        <div className="bg-[#FFE600] border-4 border-black p-3 relative overflow-hidden transition-transform group-hover:scale-[1.01]">
-          {/* Decorative cyan bubble */}
-          <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#00F0FF] rounded-full border-2 border-black -z-0 opacity-40" />
+        <motion.div
+          drag="y"
+          dragConstraints={{ top: -75, bottom: 0 }}
+          dragElastic={0.2}
+          onDragStart={() => {
+            setIsLifted(true);
+            playMinecraftClick();
+          }}
+          onDragEnd={(_, info) => {
+            setIsLifted(false);
+            playCartridgeSnapSound();
+            if (info.offset.y < -40 && onOpenCartridgeSelect) {
+              onOpenCartridgeSelect();
+            }
+          }}
+          whileHover={{ y: -3 }}
+          transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+          className="mc-panel-nether p-3 relative cursor-grab active:cursor-grabbing z-10 select-none shadow-md"
+        >
+          {/* Cartridge Drag Gripper Indicator */}
+          <div className="flex items-center justify-between text-[8px] font-pixel text-zinc-300 mb-1 px-1">
+            <span className="flex items-center gap-1 text-[#55ffff]">
+              <MoveVertical className="w-3 h-3" /> DRAG TO EJECT
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onOpenCartridgeSelect) {
+                  playMinecraftClick();
+                  onOpenCartridgeSelect();
+                }
+              }}
+              className="text-[#ffaa00] hover:text-white underline cursor-pointer"
+            >
+              [OPEN VAULT]
+            </button>
+          </div>
 
-          <div className="relative z-10">
+          {/* Cartridge Grooves / Inset Strip */}
+          <div className="h-4 w-full cartridge-grooves border border-black mb-2.5" />
+
+          {/* Cartridge Artwork with Minecraft Enchanted Shimmer */}
+          <motion.div
+            layout
+            className="mc-tooltip mc-enchanted-glint relative overflow-hidden p-3"
+          >
             {/* Header info */}
-            <div className="flex items-center justify-between">
-              <span className="font-archivo text-[10px] md:text-xs bg-black text-white px-2 py-0.5 truncate max-w-[190px]">
-                {cartridge.expansionName}
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-pixel text-[8px] text-[#55ffff] truncate max-w-[200px]">
+                §b{cartridge.expansionName}
               </span>
-              <span className="font-pixel text-[8px] text-black shrink-0">
+              <span className="font-pixel text-[8px] text-[#ffaa00] shrink-0">
                 {cartridge.romSize}
               </span>
             </div>
 
-            {/* Main Cartridge Centerpiece */}
-            <div className="my-2.5 md:my-3 py-3 md:py-4 bg-white border-2 border-black flex flex-col items-center justify-center text-center px-2">
-              <div className="text-3xl md:text-4xl mb-1 tracking-widest">{cartridge.icons}</div>
-              <span className="font-archivo text-base md:text-lg tracking-tight uppercase text-black leading-tight">
+            {/* Cartridge Centerpiece */}
+            <div className="my-2 py-3 bg-[#18181b]/90 border border-purple-900/60 flex flex-col items-center justify-center text-center px-2">
+              <motion.div
+                animate={{ scale: [1, 1.08, 1], rotate: [0, 2, -2, 0] }}
+                transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+                className="py-1 mb-1 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.7)]"
+              >
+                <CartridgeIcons cartridgeId={cartridge.id} size={32} />
+              </motion.div>
+              <span className="font-pixel text-xs md:text-sm text-yellow-300 tracking-wide mt-1 drop-shadow-[1px_1px_0_#000]">
                 {cartridge.title}
               </span>
-              <span className="font-pixel text-[8px] text-pink-600 mt-1">
-                {cartridge.subtitle}
+              <span className="font-pixel text-[7px] text-zinc-400 mt-1">
+                §7MUSIC DISC // {cartridge.subtitle}
               </span>
             </div>
 
-            {/* Barcode & Rating Stamp */}
-            <div className="flex items-center justify-between pt-1 border-t-2 border-black">
-              <div className="font-mono-code text-[10px] font-black tracking-widest bg-black text-white px-1">
-                |||| | ||||| || |||
-              </div>
-              <div className="border-2 border-black bg-white px-1 py-0.5 font-pixel text-[8px] font-bold">
-                RATED: {cartridge.ratedTps}
-              </div>
+            {/* In-Game Stats Lore */}
+            <div className="flex items-center justify-between pt-1 border-t border-purple-900/50 text-[8px] font-pixel text-zinc-300">
+              <span className="text-[#55ff55]">§aTICK RATE: {cartridge.ratedTps}</span>
+              <span className="text-[#c084fc]">§dGEN: v1.20</span>
             </div>
-          </div>
-        </div>
+          </motion.div>
 
-        {/* Gold Pin Connector Reveal */}
-        <div className="mt-3 flex justify-around py-1 bg-yellow-700/70 border-t-2 border-black">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="w-2.5 md:w-3 h-2 bg-yellow-400 border border-black" />
-          ))}
-        </div>
+          {/* Gold Pin Connector */}
+          <div className="mt-2.5 flex justify-around py-1 bg-amber-950 border-t border-black">
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                animate={{
+                  backgroundColor: isLifted ? '#55ff55' : '#ffaa00',
+                  boxShadow: isLifted ? '0 0 6px #55ff55' : 'none',
+                }}
+                className="w-2.5 h-1.5 border border-black"
+              />
+            ))}
+          </div>
+        </motion.div>
       </div>
 
-      {/* Giant Arcade Deploy Button */}
+      {/* Minecraft Deploy Button */}
       <div className="mt-4 md:mt-5">
         <button
+          type="button"
           onClick={() => {
-            playCoinSound();
-            setTimeout(playDeployFanfare, 150);
+            playMinecraftAnvil();
+            setTimeout(playMinecraftLevelUp, 200);
             onTriggerDeploy();
           }}
           disabled={isFlashing}
-          className="w-full bg-[#FFE600] hover:bg-yellow-300 disabled:opacity-75 text-black border-4 border-black p-3.5 md:p-4 font-archivo text-lg md:text-xl uppercase tracking-wider flex flex-col items-center justify-center brutal-shadow brutal-press group relative overflow-hidden cursor-pointer"
+          className="w-full mc-btn mc-btn-ignite py-3.5 md:py-4 flex flex-col items-center justify-center text-center shadow-lg cursor-pointer disabled:opacity-80"
         >
-          <div className="flex items-center gap-2 md:gap-3">
-            <span className="text-xl md:text-2xl animate-spin" style={{ animationDuration: '4s' }}>
-              🕹️
+          <div className="flex items-center gap-2">
+            <span className="inline-flex">
+              {isFlashing ? <ClockIcon size={18} /> : <LightningIcon size={18} />}
             </span>
-            <span className="drop-shadow-[1px_1px_0px_#fff]">
-              {isFlashing ? '⚡ FLASHING CARTRIDGE...' : 'INSERT COIN // START ENGINE'}
+            <span className="font-pixel text-xs md:text-sm text-[#0F0C12] font-black drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] tracking-wide">
+              {isFlashing ? 'SMELTING BDS ROM...' : 'DEPLOY & FLASH ENGINE'}
             </span>
-            <span className="text-xl md:text-2xl">⚡</span>
           </div>
-          <span className="font-pixel text-[8px] md:text-[9px] bg-black text-[#00F0FF] px-2 py-0.5 mt-2 border border-black">
-            [PRESS 1P BUTTON TO REBUILD CONTAINER]
+          <span className="font-pixel text-[7px] text-[#2C1600] font-bold mt-1">
+            [EXECUTE NATIVE BEDROCK COMPILE &amp; REBOOT]
           </span>
         </button>
 
-        {isFlashing && (
-          <div className="mt-2 p-2 bg-black border-2 border-red-500 text-yellow-300 font-pixel text-center text-[9px] md:text-[10px] animate-bounce">
-            ⚡ WARNING: REBUILDING NATIVE BDS INSTANCE!
-          </div>
-        )}
+        <AnimatePresence>
+          {isFlashing && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mt-2 p-2 bg-[#2a1212] border border-[#ef4444] text-[#ffaa00] font-pixel text-center text-[8px] flex items-center justify-center gap-1.5"
+            >
+              <AlertIcon size={12} /> HOT-SWAPPING CONTAINER ASSETS // 20 TPS LOCK IN PROGRESS...
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Bedrock Engine Version Picker */}
-      <div className="mt-4 md:mt-5 bg-white border-4 border-black p-3 brutal-shadow-sm">
-        <label
-          className="font-archivo text-xs uppercase mb-1.5 flex items-center justify-between"
-          htmlFor="bds-version-select"
-        >
-          <span>SELECT BDS ROM BINARY</span>
-          <span className="bg-[#22C55E] text-white px-1.5 font-pixel text-[8px]">VERIFIED</span>
+      {/* Bedrock Version Selector using Minecraft Slot Chips */}
+      <div className="mt-4 mc-inset p-2.5">
+        <label className="font-pixel text-[8px] text-zinc-300 mb-2 flex items-center justify-between">
+          <span>BEDROCK BINARY TARGET:</span>
+          <span className="text-[#55ff55]">ACTIVE: {selectedVersion}</span>
         </label>
-        <div className="relative">
-          <select
-            id="bds-version-select"
-            value={selectedVersion}
-            onChange={(e) => {
-              playButtonClick();
-              onSelectVersion(e.target.value);
-            }}
-            className="w-full bg-[#FFE600] border-2 border-black text-black font-chakra font-bold text-xs md:text-sm px-3 py-2 pr-8 focus:outline-none appearance-none cursor-pointer"
-          >
-            <option value="1.20.73.01">v1.20.73.01 (Latest Stable - Tricky Trials ready)</option>
-            <option value="1.20.60.24">v1.20.60.24 (Legacy Long-Term Support)</option>
-            <option value="1.20.50.03">v1.20.50.03 (Armadillo Backport Patch)</option>
-            <option value="1.20.80.22">v1.20.80.22 (Bedrock Preview &amp; Experimental Scripting)</option>
-          </select>
-          <ChevronDown className="w-5 h-5 absolute right-2 top-2 pointer-events-none text-black stroke-[3]" />
+        <div className="grid grid-cols-3 gap-1.5">
+          {versions.map(({ ver, label, tag }) => {
+            const isActive = selectedVersion === ver;
+            return (
+              <button
+                key={ver}
+                type="button"
+                onClick={() => {
+                  playMinecraftClick();
+                  onSelectVersion(ver);
+                }}
+                className={`mc-slot p-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
+                  isActive ? 'active ring-2 ring-[#55ff55]' : 'opacity-80 hover:opacity-100'
+                }`}
+              >
+                <span className="font-pixel text-[8px] text-white">v{label}</span>
+                <span className={`font-pixel text-[6px] mt-0.5 ${isActive ? 'text-[#55ff55]' : 'text-zinc-400'}`}>
+                  {tag}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Arcade Health / Heart Meters */}
-      <div className="mt-4 flex items-center justify-between px-1 font-pixel text-[9px] text-white">
-        <span>HEALTH:</span>
-        <div className="flex gap-1 text-sm md:text-base">
-          <span>❤️</span>
-          <span>❤️</span>
-          <span>❤️</span>
-          <span>❤️</span>
-          <span>❤️</span>
+      {/* Minecraft Hearts HUD */}
+      <div className="mt-3.5 flex items-center justify-between px-1 font-pixel text-[8px] text-zinc-300">
+        <span>ROM INTEGRITY:</span>
+        <div className="flex gap-1 text-xs">
+          {[...Array(5)].map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleHeartClick(i)}
+              className="cursor-pointer hover:scale-125 transition-transform inline-flex"
+              title="Toggle Cartridge Health"
+            >
+              {i < heartsCount ? (
+                <HeartIcon size={14} className="drop-shadow-[0_0_2px_#ff2222]" />
+              ) : (
+                <EmptyHeartIcon size={14} />
+              )}
+            </button>
+          ))}
         </div>
-        <span className="text-yellow-300">100 HP</span>
+        <span className="text-[#55ff55] font-bold">
+          {heartsCount * 20}% HP
+        </span>
       </div>
     </div>
   );
 };
+
